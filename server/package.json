@@ -11,6 +11,7 @@
     "chat"
   ],
   "dependencies": {
+    "dateable": "latest",
     "superagent": "latest",
     "socket.io": "latest",
     "mongo-lite": "latest"

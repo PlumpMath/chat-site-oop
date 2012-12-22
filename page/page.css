@@ -8,11 +8,6 @@ body {
   -moz-box-sizing: border-box;
   box-shadow: 0px 0px 4px #e6e6e6;
 }
-#paper {
-  width: 900px;
-  margin: 0px auto;
-  background: #f5f5f5;
-}
 #nav {
   position: relative;
   padding: 8px;
@@ -20,46 +15,91 @@ body {
 }
 #nav>div {
   display: inline-block;
+  min-width: 80px;
 }
 #nav #home {
   font-size: 18px;
 }
-#paper {
+#user {
   position: absolute;
   right: 0px;
   padding: 0px 6px;
   width: 60px;
 }
-#paper span {
+#user span {
   line-height: 20px;
 }
-#paper .menu {
+#user .menu {
   position: absolute;
   right: 0px;
   background: #f7f7f7;
   top: 20px;
+}
+#user .login .menu,
+#user .logout .menu {
   display: none;
 }
-#paper:hover .menu {
+#user:hover .menu {
   display: block;
 }
-#paper .login .menu {
+#user .login .menu {
   width: 300px;
   padding: 20px 10px;
   text-align: right;
   line-height: 28px;
 }
-#paper .login .menu input {
+#user .login .menu input {
   border: none;
   padding: 0px 4px;
   width: 160px;
 }
-#paper .loading img {
+#user .loading img {
   width: 100%;
 }
-#posts {
-  padding: 10px 8px 100px;
+#nav {
+  position: relative;
 }
-#more {
-  text-align: center;
+#nav #notify .menu {
+  position: absolute;
+  background: #f2f2f2;
+  top: 29px;
+  width: 200px;
+  display: none;
+  line-height: 20px;
+}
+#nav #notify:hover .menu {
+  display: block;
+}
+#paper {
+  width: 900px;
+  margin: 0px auto;
+  background: #f5f5f5;
+}
+#paper .topic .submit-area textarea {
+  vertical-align: top;
+  width: 800px;
+  height: 100px;
+  border: none;
+  resize: none;
+}
+#paper .topic .submit-area .submit {
+  line-height: 60px;
+}
+#paper .topic .unit {
+  max-height: 200px;
+}
+#paper .topic .unit>* {
+  display: inline-block;
+  vertical-align: top;
+}
+#paper .topic .unit img {
+  max-width: 70px;
+  max-height: 70px;
+}
+#paper .topic .unit .text {
+  width: 700px;
+}
+#paper .topic .unit .info {
+  font-size: 12px;
+  color: #b3b3b3;
 }

@@ -9,19 +9,21 @@ $ ->
   element =
     mount: {}
     tmpl: ""
-    bind: ->
+    bind: (data) ->
     render: (data) ->
       log @
       @mount.html tmpl @tmpl data
-      index.state = @tag
-      @bind!
+      user.state = @tag
+      @bind data
+
+  # hanle login/logout
 
   login-element =
     state: ""
     __proto__: element
-    mount: $ '#paper'
+    mount: $ '#user'
 
-  index =
+  user =
     login:
       tag: "login"
       __proto__: login-element
@@ -37,12 +39,12 @@ $ ->
                   "input/password": ""
               * "button.submit": "Submit"
       bind: ->
-        $ '#paper .login' .click (click) ->
+        @mount .click (click) ->
           if click.target.class-name is "submit"
             username = $ '#username' .val!
             password = $ '#password' .val!
             socket.emit "login", {username, password}
-            index.loading.render!
+            user.loading.render!
     loading:
       tag: "loading"
       __proto__: login-element
@@ -53,9 +55,9 @@ $ ->
               "img src='pic/loading.gif'": ""
       bind: ->
         delay 5000, ->
-          log index.state
-          if index.state is "loading"
-            index.failed.render!
+          log user.state
+          if user.state is "loading"
+            user.failed.render!
     logout:
       "tag": "logout"
       __proto__: login-element
@@ -63,16 +65,18 @@ $ ->
         ".logout":
           * span: "Logout"
           * ".menu":
+              * "/line":
+                  "img src='#{data.avatar}'": ""
               * ".line":
                   span: data.username
               * ".line":
                   "button.click": "Logout"
       bind: ->
-        $ '#paper .logout' .click (click) ->
+        @mount .click (click) ->
           log click
           if click.target.class-name is "click"
             socket.emit "logout"
-            index.login.render!
+            user.login.render!
     failed:
       tag: "failed"
       __proto__: login-element
@@ -80,14 +84,86 @@ $ ->
         "./failed": "Failed"
       bind: ->
         delay 2000, ->
-          index.login.render()
+          user.login.render()
 
-  index.login.render()
+  user.login.render()
   socket.on "login", (data) ->
     log "login", data
     if data.state is "success"
-      index.logout.render data.data
+      user.logout.render data.data
     else
-      index.failed.render!
+      user.failed.render!
 
-  # handle login events
+  # handle topic list and posts
+
+  page-element =
+    __proto__: element
+    mount: $ '#paper'
+
+  main =
+    state: ""
+    topic:
+      __proto__: page-element
+      unit: (item) ->
+        ".unit":
+          * "img.avatar src='#{item.avatar}'": ""
+          * ".text": item.text
+          * ".info":
+              * ".name": item.name
+              * ".time": item.time
+      tmpl: (data) ->
+        ".topic":
+          * ".submit-area":
+              * ".line":
+                  * "textarea/say placeholder='write here'": "Nothing yet."
+                  * "button.submit": "Submit"
+          * ".list": data.map @unit
+      bind: ->
+        log "mount", @mount
+        @mount .click (click) ->
+          switch click.target.class-name
+            when "submit"
+              text = $ @ .find 'textarea' .val!
+              socket.emit "create-topic", text
+              $ @ .find 'textarea' .val ""
+      insert: (item) ->
+        log "insert", @
+        @mount .find '.list' .prepend (tmpl @unit item)
+
+  log main.topic
+  demo =
+    list:
+      * text: "one"
+      * text: "two"
+      * text: "three"
+  
+  $ '#home' .click -> socket.emit "topics"
+  socket.on "topics", (list) -> main.topic.render list
+  $ '#home' .click!
+
+  socket.on "create-topic", (item) ->
+    main.topic.insert item
+
+  # render notifications
+
+  notify =
+    __proto__: element
+    mount: $ '#notify'
+    unit: (item) ->
+      "p": item.text
+    stack: []
+    tmpl: ->
+      log "tmpl:", @stack
+      ".msg":
+        * "span": "Msg"
+        * "span.count": "#{@stack.length}"
+        * ".menu":
+            * ".list": @stack.map @unit
+    insert: (item) ->
+      @stack.push item
+      @render!
+    bind: ->
+
+  notify.stack = [text: "hello"]
+  notify.render!
+  notify.insert text: "world"

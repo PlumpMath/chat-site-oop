@@ -7,7 +7,7 @@ delay = function(){
   return setTimeout(arguments[1], arguments[0]);
 };
 $(function(){
-  var socket, element, loginElement, index;
+  var socket, element, loginElement, user, pageElement, main, demo, notify;
   socket = io.connect("ws://192.168.1.19:3006");
   socket.on("greet", function(){
     return log("greet");
@@ -15,20 +15,20 @@ $(function(){
   element = {
     mount: {},
     tmpl: "",
-    bind: function(){},
+    bind: function(data){},
     render: function(data){
       log(this);
       this.mount.html(tmpl(this.tmpl(data)));
-      index.state = this.tag;
-      return this.bind();
+      user.state = this.tag;
+      return this.bind(data);
     }
   };
   loginElement = {
     state: "",
     __proto__: element,
-    mount: $('#paper')
+    mount: $('#user')
   };
-  index = {
+  user = {
     login: {
       tag: "login",
       __proto__: loginElement,
@@ -58,7 +58,7 @@ $(function(){
         };
       },
       bind: function(){
-        return $('#paper .login').click(function(click){
+        return this.mount.click(function(click){
           var username, password;
           if (click.target.className === "submit") {
             username = $('#username').val();
@@ -67,7 +67,7 @@ $(function(){
               username: username,
               password: password
             });
-            return index.loading.render();
+            return user.loading.render();
           }
         });
       }
@@ -90,9 +90,9 @@ $(function(){
       },
       bind: function(){
         return delay(5000, function(){
-          log(index.state);
-          if (index.state === "loading") {
-            return index.failed.render();
+          log(user.state);
+          if (user.state === "loading") {
+            return user.failed.render();
           }
         });
       }
@@ -101,6 +101,7 @@ $(function(){
       "tag": "logout",
       __proto__: loginElement,
       tmpl: function(data){
+        var ref$;
         return {
           ".logout": [
             {
@@ -108,6 +109,8 @@ $(function(){
             }, {
               ".menu": [
                 {
+                  "/line": (ref$ = {}, ref$["img src='" + data.avatar + "'"] = "", ref$)
+                }, {
                   ".line": {
                     span: data.username
                   }
@@ -122,11 +125,11 @@ $(function(){
         };
       },
       bind: function(){
-        return $('#paper .logout').click(function(click){
+        return this.mount.click(function(click){
           log(click);
           if (click.target.className === "click") {
             socket.emit("logout");
-            return index.login.render();
+            return user.login.render();
           }
         });
       }
@@ -141,18 +144,141 @@ $(function(){
       },
       bind: function(){
         return delay(2000, function(){
-          return index.login.render();
+          return user.login.render();
         });
       }
     }
   };
-  index.login.render();
-  return socket.on("login", function(data){
+  user.login.render();
+  socket.on("login", function(data){
     log("login", data);
     if (data.state === "success") {
-      return index.logout.render(data.data);
+      return user.logout.render(data.data);
     } else {
-      return index.failed.render();
+      return user.failed.render();
     }
+  });
+  pageElement = {
+    __proto__: element,
+    mount: $('#paper')
+  };
+  main = {
+    state: "",
+    topic: {
+      __proto__: pageElement,
+      unit: function(item){
+        var ref$;
+        return {
+          ".unit": [
+            (ref$ = {}, ref$["img.avatar src='" + item.avatar + "'"] = "", ref$), {
+              ".text": item.text
+            }, {
+              ".info": [
+                {
+                  ".name": item.name
+                }, {
+                  ".time": item.time
+                }
+              ]
+            }
+          ]
+        };
+      },
+      tmpl: function(data){
+        return {
+          ".topic": [
+            {
+              ".submit-area": {
+                ".line": [
+                  {
+                    "textarea/say placeholder='write here'": "Nothing yet."
+                  }, {
+                    "button.submit": "Submit"
+                  }
+                ]
+              }
+            }, {
+              ".list": data.map(this.unit)
+            }
+          ]
+        };
+      },
+      bind: function(){
+        log("mount", this.mount);
+        return this.mount.click(function(click){
+          var text;
+          switch (click.target.className) {
+          case "submit":
+            text = $(this).find('textarea').val();
+            socket.emit("create-topic", text);
+            return $(this).find('textarea').val("");
+          }
+        });
+      },
+      insert: function(item){
+        log("insert", this);
+        return this.mount.find('.list').prepend(tmpl(this.unit(item)));
+      }
+    }
+  };
+  log(main.topic);
+  demo = {
+    list: [
+      {
+        text: "one"
+      }, {
+        text: "two"
+      }, {
+        text: "three"
+      }
+    ]
+  };
+  $('#home').click(function(){
+    return socket.emit("topics");
+  });
+  socket.on("topics", function(list){
+    return main.topic.render(list);
+  });
+  $('#home').click();
+  socket.on("create-topic", function(item){
+    return main.topic.insert(item);
+  });
+  notify = {
+    __proto__: element,
+    mount: $('#notify'),
+    unit: function(item){
+      return {
+        "p": item.text
+      };
+    },
+    stack: [],
+    tmpl: function(){
+      log("tmpl:", this.stack);
+      return {
+        ".msg": [
+          {
+            "span": "Msg"
+          }, {
+            "span.count": this.stack.length + ""
+          }, {
+            ".menu": {
+              ".list": this.stack.map(this.unit)
+            }
+          }
+        ]
+      };
+    },
+    insert: function(item){
+      this.stack.push(item);
+      return this.render();
+    },
+    bind: function(){}
+  };
+  notify.stack = [{
+    text: "hello"
+  }];
+  notify.render();
+  return notify.insert({
+    text: "world"
   });
 });

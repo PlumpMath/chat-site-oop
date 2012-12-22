@@ -15,11 +15,6 @@ body
   -moz-box-sizing border-box
   box-shadow 0px 0px 4px hsl(0,0,90)
 
-#paper
-  width 900px
-  margin 0px auto
-  background hsl(0,0,96)
-
 // navigation bar
 
 #nav
@@ -29,11 +24,12 @@ body
 
   &>div
     display inline-block
+    min-width 80px
 
   #home
     font-size 18px
 
-#paper
+#user
   position absolute
   right 0px
   padding 0px 6px
@@ -47,6 +43,8 @@ body
     right 0px
     background hsl(0,0,97)
     top 20px
+
+  .login .menu, .logout .menu
     display none
 
   &:hover .menu
@@ -69,10 +67,57 @@ body
     img
       width 100%
 
+// notifications
+
+#nav
+  position relative
+
+  #notify
+    .menu
+      position absolute
+      background hsl(0,0,95)
+      top 29px
+      width 200px
+      display none
+      line-height 20px
+
+    &:hover .menu
+      display block
+
 // main part to write posts
 
-#posts
-  padding 10px 8px 100px
+#paper
+  width 900px
+  margin 0px auto
+  background hsl(0,0,96)
 
-#more
-  text-align center
+  .topic
+    .submit-area
+      
+      textarea
+        vertical-align top
+        width 800px
+        height 100px
+        border none
+        resize none
+
+      .submit
+        line-height 60px
+
+    .unit
+      max-height 200px
+
+      &>*
+        display inline-block
+        vertical-align top
+
+      img
+        max-width 70px
+        max-height 70px
+
+      .text
+        width 700px
+
+      .info
+        font-size 12px
+        color hsl(0,0,70)
