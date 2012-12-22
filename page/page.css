@@ -8,6 +8,9 @@ body {
   -moz-box-sizing: border-box;
   box-shadow: 0px 0px 4px #e6e6e6;
 }
+textarea {
+  border: none;
+}
 #nav {
   position: relative;
   padding: 8px;
@@ -75,31 +78,41 @@ body {
   margin: 0px auto;
   background: #f5f5f5;
 }
-#paper .topic .submit-area textarea {
+#paper .submit-area textarea {
   vertical-align: top;
   width: 800px;
   height: 100px;
-  border: none;
   resize: none;
 }
-#paper .topic .submit-area .submit {
+#paper .submit-area .submit {
   line-height: 60px;
 }
-#paper .topic .unit {
+#paper .unit {
   max-height: 200px;
 }
-#paper .topic .unit>* {
+#paper .unit>* {
   display: inline-block;
   vertical-align: top;
 }
-#paper .topic .unit img {
+#paper .unit img {
   max-width: 70px;
   max-height: 70px;
 }
-#paper .topic .unit .text {
+#paper .unit .text {
   width: 700px;
 }
-#paper .topic .unit .info {
+#paper .unit .info {
   font-size: 12px;
   color: #b3b3b3;
+}
+#paper .unit .reply {
+  display: inline-block;
+  padding: 4px 6px;
+  background: #a8a8f0;
+  border-radius: 8px;
+  color: #fff;
+  font-family: monospace;
+}
+#paper .post .list {
+  min-height: 200px;
 }

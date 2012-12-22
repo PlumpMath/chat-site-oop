@@ -15,6 +15,9 @@ body
   -moz-box-sizing border-box
   box-shadow 0px 0px 4px hsl(0,0,90)
 
+textarea
+  border none
+
 // navigation bar
 
 #nav
@@ -91,33 +94,43 @@ body
   margin 0px auto
   background hsl(0,0,96)
 
-  .topic
-    .submit-area
-      
-      textarea
-        vertical-align top
-        width 800px
-        height 100px
-        border none
-        resize none
+  .submit-area
+    
+    textarea
+      vertical-align top
+      width 800px
+      height 100px
+      resize none
 
-      .submit
-        line-height 60px
+    .submit
+      line-height 60px
 
-    .unit
-      max-height 200px
+  .unit
+    max-height 200px
 
-      &>*
-        display inline-block
-        vertical-align top
+    &>*
+      display inline-block
+      vertical-align top
 
-      img
-        max-width 70px
-        max-height 70px
+    img
+      max-width 70px
+      max-height 70px
 
-      .text
-        width 700px
+    .text
+      width 700px
 
-      .info
-        font-size 12px
-        color hsl(0,0,70)
+    .info
+      font-size 12px
+      color hsl(0,0,70)
+
+    .reply
+      display inline-block
+      padding 4px 6px
+      background hsl(240,70,80)
+      border-radius 8px
+      color white
+      font-family monospace
+
+  .post
+    .list
+      min-height 200px

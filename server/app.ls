@@ -6,6 +6,7 @@ auth = require "./get-auth" .auth
 
 date = require "dateable"
 new-date = -> date.format (new Date!), "YY, MM/DD hh:mm "
+make-stamp = -> (new Date!).get-time!.to-string!
 
 mongo-url = "mongodb://localhost/chat-site"
 db = require "mongo-lite" .connect mongo-url, <[ topics posts ]>
@@ -30,19 +31,42 @@ io.sockets.on "connection", (socket) ->
   socket.on "logout", ->
     profile := {}
 
+  after-auth = (f) ->
+    if profile.username? then f!
+    else socket.emit "notify", text: "You haven's loggedin"
+
   socket.on "create-topic", (text) ->
     log "create-topic", text, profile
-    if profile.username?
+    after-auth ->
       item =
         name: profile.username
         avatar: profile.avatar
         time: new-date!
         text: text
+        stamp: make-stamp!
+        reply: 0
       topics.save item, ->
       io.sockets.emit "create-topic", item
-    else
-      socket.emit "notify", text: "You haven's loggedin"
+      
 
   socket.on "topics", ->
     topics .sort time:-1 .all (err, docs) ->
       socket.emit "topics", docs
+
+  socket.on "load-topic", (stamp) ->
+    posts.all topic: stamp, (err, docs) ->
+      throw err if err?
+      log "from db:", docs
+      socket.emit "load-topic", docs
+
+  socket.on "add-reply", (data) ->
+    after-auth ->
+      item =
+        name: profile.username
+        avatar: profile.avatar
+        time: new-date!
+        text: data.text
+        stamp: make-stamp!
+        topic: data.stamp
+      log "reply:", item
+      posts.save item, ->

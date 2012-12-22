@@ -13,7 +13,7 @@ $ ->
     render: (data) ->
       log @
       @mount.html tmpl @tmpl data
-      user.state = @tag
+      user.state = @id
       @bind data
 
   # hanle login/logout
@@ -25,7 +25,7 @@ $ ->
 
   user =
     login:
-      tag: "login"
+      id: "login"
       __proto__: login-element
       tmpl: ->
         ".login":
@@ -46,7 +46,7 @@ $ ->
             socket.emit "login", {username, password}
             user.loading.render!
     loading:
-      tag: "loading"
+      id: "loading"
       __proto__: login-element
       tmpl: ->
         ".loading":
@@ -59,7 +59,7 @@ $ ->
           if user.state is "loading"
             user.failed.render!
     logout:
-      "tag": "logout"
+      "id": "logout"
       __proto__: login-element
       tmpl: (data) ->
         ".logout":
@@ -78,7 +78,7 @@ $ ->
             socket.emit "logout"
             user.login.render!
     failed:
-      tag: "failed"
+      id: "failed"
       __proto__: login-element
       tmpl: ->
         "./failed": "Failed"
@@ -99,39 +99,75 @@ $ ->
   page-element =
     __proto__: element
     mount: $ '#paper'
+    unit: (item) ->
+      info =
+        * ".name": item.name
+        * ".time": item.time
+      if item.reply?
+        info.unshift ".reply stamp='#{item.stamp}'":
+          item.reply.to-string!
+      ".unit":
+        * "img.avatar src='#{item.avatar}'": ""
+        * ".text": item.text
+        * ".info": info
+    check-string: (str, f) ->
+      if str.length > 0 then f!
+      else notify.insert text: "dont send empty string!"
+    placeholder: "placeholder='write here'"
+    stamp: ""
 
   main =
     state: ""
     topic:
       __proto__: page-element
-      unit: (item) ->
-        ".unit":
-          * "img.avatar src='#{item.avatar}'": ""
-          * ".text": item.text
-          * ".info":
-              * ".name": item.name
-              * ".time": item.time
+      id: "topic"
       tmpl: (data) ->
         ".topic":
           * ".submit-area":
               * ".line":
-                  * "textarea/say placeholder='write here'": "Nothing yet."
+                  * "textarea/say #{@placeholder}": "Nothing yet."
                   * "button.submit": "Submit"
           * ".list": data.map @unit
       bind: ->
         log "mount", @mount
-        @mount .click (click) ->
+        self = @
+        @mount .find ".topic" .click (click) ->
           switch click.target.class-name
             when "submit"
-              text = $ @ .find 'textarea' .val!
-              if text.length > 0
+              text = self.mount .find 'textarea' .val!
+              page-element.check-string text, ->
                 socket.emit "create-topic", text
-                $ @ .find 'textarea' .val ""
-              else
-                notify.insert text: "dont send empty string!"
+                self.mount .find 'textarea' .val ""
+            when "reply"
+              stamp = $ click.target .attr "stamp"
+              log "stamp-->", stamp
+              page-element.stamp = stamp
+              log page-element.stamp
+              socket.emit "load-topic", stamp
       insert: (item) ->
         log "insert", @
         @mount .find '.list' .prepend (tmpl @unit item)
+    post:
+      __proto__: page-element
+      id: "post"
+      tmpl: (data) ->
+        ".post":
+          * ".list": data.map @unit
+          * ".submit-area":
+              * "textarea.reply #{@placeholder}": ""
+              * "button.submit": "Submit"
+      bind: ->
+        self = @
+        @mount .find '.post' .click (click) ->
+          if click.target.class-name is "submit"
+            text = self.mount .find ".reply" .val!
+            page-element.check-string text, ->
+              data =
+                text: text
+                stamp: page-element.stamp
+              log "data:", data
+              socket.emit "add-reply", data
+              self.mount .find ".reply" .val ""
 
   log main.topic
   demo =
@@ -146,6 +182,10 @@ $ ->
 
   socket.on "create-topic", (item) ->
     main.topic.insert item
+
+  socket.on "load-topic", (list) ->
+    log "list", list
+    main.post.render list
 
   # render notifications
 

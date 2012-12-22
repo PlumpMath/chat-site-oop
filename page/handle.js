@@ -19,7 +19,7 @@ $(function(){
     render: function(data){
       log(this);
       this.mount.html(tmpl(this.tmpl(data)));
-      user.state = this.tag;
+      user.state = this.id;
       return this.bind(data);
     }
   };
@@ -30,7 +30,7 @@ $(function(){
   };
   user = {
     login: {
-      tag: "login",
+      id: "login",
       __proto__: loginElement,
       tmpl: function(){
         return {
@@ -73,7 +73,7 @@ $(function(){
       }
     },
     loading: {
-      tag: "loading",
+      id: "loading",
       __proto__: loginElement,
       tmpl: function(){
         return {
@@ -98,7 +98,7 @@ $(function(){
       }
     },
     logout: {
-      "tag": "logout",
+      "id": "logout",
       __proto__: loginElement,
       tmpl: function(data){
         var ref$;
@@ -135,7 +135,7 @@ $(function(){
       }
     },
     failed: {
-      tag: "failed",
+      id: "failed",
       __proto__: loginElement,
       tmpl: function(){
         return {
@@ -160,39 +160,54 @@ $(function(){
   });
   pageElement = {
     __proto__: element,
-    mount: $('#paper')
+    mount: $('#paper'),
+    unit: function(item){
+      var info, ref$;
+      info = [
+        {
+          ".name": item.name
+        }, {
+          ".time": item.time
+        }
+      ];
+      if (item.reply != null) {
+        info.unshift((ref$ = {}, ref$[".reply stamp='" + item.stamp + "'"] = item.reply.toString(), ref$));
+      }
+      return {
+        ".unit": [
+          (ref$ = {}, ref$["img.avatar src='" + item.avatar + "'"] = "", ref$), {
+            ".text": item.text
+          }, {
+            ".info": info
+          }
+        ]
+      };
+    },
+    checkString: function(str, f){
+      if (str.length > 0) {
+        return f();
+      } else {
+        return notify.insert({
+          text: "dont send empty string!"
+        });
+      }
+    },
+    placeholder: "placeholder='write here'",
+    stamp: ""
   };
   main = {
     state: "",
     topic: {
       __proto__: pageElement,
-      unit: function(item){
-        var ref$;
-        return {
-          ".unit": [
-            (ref$ = {}, ref$["img.avatar src='" + item.avatar + "'"] = "", ref$), {
-              ".text": item.text
-            }, {
-              ".info": [
-                {
-                  ".name": item.name
-                }, {
-                  ".time": item.time
-                }
-              ]
-            }
-          ]
-        };
-      },
+      id: "topic",
       tmpl: function(data){
+        var ref$;
         return {
           ".topic": [
             {
               ".submit-area": {
                 ".line": [
-                  {
-                    "textarea/say placeholder='write here'": "Nothing yet."
-                  }, {
+                  (ref$ = {}, ref$["textarea/say " + this.placeholder] = "Nothing yet.", ref$), {
                     "button.submit": "Submit"
                   }
                 ]
@@ -204,26 +219,70 @@ $(function(){
         };
       },
       bind: function(){
+        var self;
         log("mount", this.mount);
-        return this.mount.click(function(click){
-          var text;
+        self = this;
+        return this.mount.find(".topic").click(function(click){
+          var text, stamp;
           switch (click.target.className) {
           case "submit":
-            text = $(this).find('textarea').val();
-            if (text.length > 0) {
+            text = self.mount.find('textarea').val();
+            return pageElement.checkString(text, function(){
               socket.emit("create-topic", text);
-              return $(this).find('textarea').val("");
-            } else {
-              return notify.insert({
-                text: "dont send empty string!"
-              });
-            }
+              return self.mount.find('textarea').val("");
+            });
+          case "reply":
+            stamp = $(click.target).attr("stamp");
+            log("stamp-->", stamp);
+            pageElement.stamp = stamp;
+            log(pageElement.stamp);
+            return socket.emit("load-topic", stamp);
           }
         });
       },
       insert: function(item){
         log("insert", this);
         return this.mount.find('.list').prepend(tmpl(this.unit(item)));
+      }
+    },
+    post: {
+      __proto__: pageElement,
+      id: "post",
+      tmpl: function(data){
+        var ref$;
+        return {
+          ".post": [
+            {
+              ".list": data.map(this.unit)
+            }, {
+              ".submit-area": [
+                (ref$ = {}, ref$["textarea.reply " + this.placeholder] = "", ref$), {
+                  "button.submit": "Submit"
+                }
+              ]
+            }
+          ]
+        };
+      },
+      bind: function(){
+        var self;
+        self = this;
+        return this.mount.find('.post').click(function(click){
+          var text;
+          if (click.target.className === "submit") {
+            text = self.mount.find(".reply").val();
+            return pageElement.checkString(text, function(){
+              var data;
+              data = {
+                text: text,
+                stamp: pageElement.stamp
+              };
+              log("data:", data);
+              socket.emit("add-reply", data);
+              return self.mount.find(".reply").val("");
+            });
+          }
+        });
       }
     }
   };
@@ -248,6 +307,10 @@ $(function(){
   $('#home').click();
   socket.on("create-topic", function(item){
     return main.topic.insert(item);
+  });
+  socket.on("load-topic", function(list){
+    log("list", list);
+    return main.post.render(list);
   });
   notify = {
     __proto__: element,
