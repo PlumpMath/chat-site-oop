@@ -124,8 +124,11 @@ $ ->
           switch click.target.class-name
             when "submit"
               text = $ @ .find 'textarea' .val!
-              socket.emit "create-topic", text
-              $ @ .find 'textarea' .val ""
+              if text.length > 0
+                socket.emit "create-topic", text
+                $ @ .find 'textarea' .val ""
+              else
+                notify.insert text: "dont send empty string!"
       insert: (item) ->
         log "insert", @
         @mount .find '.list' .prepend (tmpl @unit item)
@@ -159,11 +162,16 @@ $ ->
         * "span.count": "#{@stack.length}"
         * ".menu":
             * ".list": @stack.map @unit
+            * "button.clear": "Clear"
     insert: (item) ->
       @stack.push item
       @render!
     bind: ->
+      @mount .click (click) ->
+        if click.target.class-name is "clear"
+          notify.stack = []
+          notify.render!
 
   notify.stack = [text: "hello"]
   notify.render!
-  notify.insert text: "world"
+  socket.on "notify", (item) -> notify.insert item

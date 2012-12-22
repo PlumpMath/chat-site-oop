@@ -210,8 +210,14 @@ $(function(){
           switch (click.target.className) {
           case "submit":
             text = $(this).find('textarea').val();
-            socket.emit("create-topic", text);
-            return $(this).find('textarea').val("");
+            if (text.length > 0) {
+              socket.emit("create-topic", text);
+              return $(this).find('textarea').val("");
+            } else {
+              return notify.insert({
+                text: "dont send empty string!"
+              });
+            }
           }
         });
       },
@@ -261,9 +267,13 @@ $(function(){
           }, {
             "span.count": this.stack.length + ""
           }, {
-            ".menu": {
-              ".list": this.stack.map(this.unit)
-            }
+            ".menu": [
+              {
+                ".list": this.stack.map(this.unit)
+              }, {
+                "button.clear": "Clear"
+              }
+            ]
           }
         ]
       };
@@ -272,13 +282,20 @@ $(function(){
       this.stack.push(item);
       return this.render();
     },
-    bind: function(){}
+    bind: function(){
+      return this.mount.click(function(click){
+        if (click.target.className === "clear") {
+          notify.stack = [];
+          return notify.render();
+        }
+      });
+    }
   };
   notify.stack = [{
     text: "hello"
   }];
   notify.render();
-  return notify.insert({
-    text: "world"
+  return socket.on("notify", function(item){
+    return notify.insert(item);
   });
 });

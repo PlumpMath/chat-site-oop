@@ -41,7 +41,7 @@ io.sockets.on "connection", (socket) ->
       topics.save item, ->
       io.sockets.emit "create-topic", item
     else
-      socket.emit "notify", "You haven's loggedin"
+      socket.emit "notify", text: "You haven's loggedin"
 
   socket.on "topics", ->
     topics .sort time:-1 .all (err, docs) ->
