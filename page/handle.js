@@ -125,6 +125,7 @@ $(function(){
         };
       },
       bind: function(){
+        $('#home').click();
         return this.mount.click(function(click){
           log(click);
           if (click.target.className === "click") {
@@ -283,6 +284,9 @@ $(function(){
             });
           }
         });
+      },
+      insert: function(item){
+        return this.mount.find(".list").append(tmpl(this.unit(item)));
       }
     }
   };
@@ -312,13 +316,28 @@ $(function(){
     log("list", list);
     return main.post.render(list);
   });
+  socket.on("add-reply", function(item){
+    return main.post.insert(item);
+  });
   notify = {
     __proto__: element,
     mount: $('#notify'),
     unit: function(item){
-      return {
-        "p": item.text
-      };
+      var ref$;
+      log("unit", item);
+      if (item.receiver != null) {
+        return ref$ = {}, ref$[".link stamp='" + item.stamp + "'"] = [
+          {
+            "span.span": item.name
+          }, {
+            "span.span": item.text
+          }
+        ], ref$;
+      } else {
+        return {
+          "p": item.text
+        };
+      }
     },
     stack: [],
     tmpl: function(){
@@ -347,18 +366,26 @@ $(function(){
     },
     bind: function(){
       return this.mount.click(function(click){
-        if (click.target.className === "clear") {
+        var stamp;
+        switch (click.target.className) {
+        case "clear":
           notify.stack = [];
-          return notify.render();
+          notify.render();
+          return socket.emit("click");
+        case "link":
+          stamp = $(click.target).attr("stamp");
+          pageElement.stamp = stamp;
+          log(pageElement.stamp);
+          return socket.emit("load-topic", stamp);
+        case "span":
+          return $(click.target).parent().click();
         }
       });
     }
   };
-  notify.stack = [{
-    text: "hello"
-  }];
-  notify.render();
-  return socket.on("notify", function(item){
-    return notify.insert(item);
+  return socket.on("msgs", function(list){
+    notify.stack = list;
+    notify.render();
+    return log("list", list);
   });
 });

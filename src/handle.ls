@@ -72,6 +72,7 @@ $ ->
               * ".line":
                   "button.click": "Logout"
       bind: ->
+        $ '#home' .click!
         @mount .click (click) ->
           log click
           if click.target.class-name is "click"
@@ -168,6 +169,8 @@ $ ->
               log "data:", data
               socket.emit "add-reply", data
               self.mount .find ".reply" .val ""
+      insert: (item) ->
+        @mount .find ".list" .append tmpl @unit item
 
   log main.topic
   demo =
@@ -187,13 +190,22 @@ $ ->
     log "list", list
     main.post.render list
 
+  socket.on "add-reply", (item) ->
+    main.post.insert item
+
   # render notifications
 
   notify =
     __proto__: element
     mount: $ '#notify'
     unit: (item) ->
-      "p": item.text
+      log "unit", item
+      if item.receiver?
+        ".link stamp='#{item.stamp}'":
+          * "span.span": item.name
+          * "span.span": item.text
+      else
+        "p": item.text
     stack: []
     tmpl: ->
       log "tmpl:", @stack
@@ -208,10 +220,20 @@ $ ->
       @render!
     bind: ->
       @mount .click (click) ->
-        if click.target.class-name is "clear"
-          notify.stack = []
-          notify.render!
+        switch click.target.class-name
+          when "clear"
+            notify.stack = []
+            notify.render!
+            socket.emit "click"
+          when "link"
+            stamp = $ click.target .attr "stamp"
+            page-element.stamp = stamp
+            log page-element.stamp
+            socket.emit "load-topic", stamp
+          when "span"
+            $ click.target .parent! .click!
 
-  notify.stack = [text: "hello"]
-  notify.render!
-  socket.on "notify", (item) -> notify.insert item
+  socket.on "msgs", (list) ->
+    notify.stack = list
+    notify.render!
+    log "list", list
