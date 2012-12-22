@@ -5,6 +5,7 @@ delay = -> set-timeout &1, &0
 $ ->
   socket = io.connect "ws://192.168.1.19:3006"
   socket.on "greet", -> log "greet"
+  ls = local-storage
 
   element =
     mount: {}
@@ -28,21 +29,23 @@ $ ->
       id: "login"
       __proto__: login-element
       tmpl: ->
+        username = "value='#{ls.username or ""}'"
+        password = "value='#{ls.password or ""}' type='password'"
         ".login":
           * span: "login"
           * ".menu":
               * ".line":
                   * "span": "Username"
-                  * "input/username": ""
+                  * "input/username #{username}": ""
               * ".line":
                   * "span": "Password"
-                  * "input/password": ""
+                  * "input/password #{password}": ""
               * "button.submit": "Submit"
       bind: ->
         @mount .click (click) ->
           if click.target.class-name is "submit"
-            username = $ '#username' .val!
-            password = $ '#password' .val!
+            ls.username = username = $ '#username' .val!
+            ls.password = password = $ '#password' .val!
             socket.emit "login", {username, password}
             user.loading.render!
     loading:

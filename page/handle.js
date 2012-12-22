@@ -7,11 +7,12 @@ delay = function(){
   return setTimeout(arguments[1], arguments[0]);
 };
 $(function(){
-  var socket, element, loginElement, user, pageElement, main, demo, notify;
+  var socket, ls, element, loginElement, user, pageElement, main, demo, notify;
   socket = io.connect("ws://192.168.1.19:3006");
   socket.on("greet", function(){
     return log("greet");
   });
+  ls = localStorage;
   element = {
     mount: {},
     tmpl: "",
@@ -33,6 +34,9 @@ $(function(){
       id: "login",
       __proto__: loginElement,
       tmpl: function(){
+        var username, password, ref$;
+        username = "value='" + (ls.username || "") + "'";
+        password = "value='" + (ls.password || "") + "' type='password'";
         return {
           ".login": [
             {
@@ -43,17 +47,13 @@ $(function(){
                   ".line": [
                     {
                       "span": "Username"
-                    }, {
-                      "input/username": ""
-                    }
+                    }, (ref$ = {}, ref$["input/username " + username] = "", ref$)
                   ]
                 }, {
                   ".line": [
                     {
                       "span": "Password"
-                    }, {
-                      "input/password": ""
-                    }
+                    }, (ref$ = {}, ref$["input/password " + password] = "", ref$)
                   ]
                 }, {
                   "button.submit": "Submit"
@@ -67,8 +67,8 @@ $(function(){
         return this.mount.click(function(click){
           var username, password;
           if (click.target.className === "submit") {
-            username = $('#username').val();
-            password = $('#password').val();
+            ls.username = username = $('#username').val();
+            ls.password = password = $('#password').val();
             socket.emit("login", {
               username: username,
               password: password
