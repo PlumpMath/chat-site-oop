@@ -1,0 +1,20 @@
+{
+  "name": "chat-site",
+  "version": "0.0.0",
+  "description": "a site one can chat here",
+  "main": "app.coffee",
+  "scripts": {
+    "test": "coffee app.coffee"
+  },
+  "repository": "",
+  "keywords": [
+    "chat"
+  ],
+  "dependencies": {
+    "superagent": "latest",
+    "socket.io": "latest",
+    "mongo-lite": "latest"
+  },
+  "author": "jiyinyiyong",
+  "license": "MIT"
+}
