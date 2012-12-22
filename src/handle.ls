@@ -32,11 +32,11 @@ $ ->
           * span: "login"
           * ".menu":
               * ".line":
-                  "span": "Username"
-                  "input/username": ""
+                  * "span": "Username"
+                  * "input/username": ""
               * ".line":
-                  "span": "Password"
-                  "input/password": ""
+                  * "span": "Password"
+                  * "input/password": ""
               * "button.submit": "Submit"
       bind: ->
         @mount .click (click) ->
@@ -107,7 +107,7 @@ $ ->
       if item.reply?
         info.unshift ".reply stamp='#{item.stamp}'":
           item.reply.to-string!
-      ".unit":
+      ".unit stamp='#{item.stamp}'":
         * "img.avatar src='#{item.avatar}'": ""
         * ".text": item.text
         * ".info": info
@@ -129,6 +129,7 @@ $ ->
                   * "textarea/say #{@placeholder}": "Nothing yet."
                   * "button.submit": "Submit"
           * ".list": data.map @unit
+          * ".more": "More"
       bind: ->
         log "mount", @mount
         self = @
@@ -145,14 +146,26 @@ $ ->
               page-element.stamp = stamp
               log page-element.stamp
               socket.emit "load-topic", stamp
+            when "more"
+              last = self.mount.find ".list" .children!.last! .find ".reply"
+              log last
+              if last.0?
+                socket.emit "more-topic", (last.attr "stamp")
       insert: (item) ->
         log "insert", @
         @mount .find '.list' .prepend (tmpl @unit item)
+      more: (list) ->
+        if list.length > 0
+          render = @unit >> tmpl
+          html = list.map render .join ""
+          @mount .find ".list" .append html
+        else @mount.find ".more" .remove!
     post:
       __proto__: page-element
       id: "post"
       tmpl: (data) ->
         ".post":
+          * ".more": "More"
           * ".list": data.map @unit
           * ".submit-area":
               * "textarea.reply #{@placeholder}": ""
@@ -160,17 +173,29 @@ $ ->
       bind: ->
         self = @
         @mount .find '.post' .click (click) ->
-          if click.target.class-name is "submit"
-            text = self.mount .find ".reply" .val!
-            page-element.check-string text, ->
-              data =
-                text: text
-                stamp: page-element.stamp
-              log "data:", data
-              socket.emit "add-reply", data
-              self.mount .find ".reply" .val ""
+          switch click.target.class-name
+            when "submit"
+              text = self.mount .find ".reply" .val!
+              page-element.check-string text, ->
+                data =
+                  text: text
+                  stamp: page-element.stamp
+                log "data:", data
+                socket.emit "add-reply", data
+                self.mount .find ".reply" .val ""
+            when "more"
+              first = self.mount .find ".list" .children!.first!
+              log first
+              if first.0?
+                socket.emit "more-post", (first.attr "stamp")
       insert: (item) ->
         @mount .find ".list" .append tmpl @unit item
+      more: (list) ->
+        if list.length > 0
+          render = @unit >> tmpl
+          html = list.map render .join ""
+          @mount .find ".list" .prepend html
+        else @mount.find ".more" .remove!
 
   log main.topic
   demo =
@@ -193,6 +218,12 @@ $ ->
   socket.on "add-reply", (item) ->
     main.post.insert item
 
+  socket.on "more-topic", (list) ->
+    main.topic.more list
+
+  socket.on "more-post", (list) ->
+    main.post.more list
+
   # render notifications
 
   notify =
@@ -209,12 +240,14 @@ $ ->
     stack: []
     tmpl: ->
       log "tmpl:", @stack
-      ".msg":
-        * "span": "Msg"
-        * "span.count": "#{@stack.length}"
-        * ".menu":
-            * ".list": @stack.map @unit
-            * "button.clear": "Clear"
+      if @stack.length > 0
+        ".msg":
+          * "span": "Msg"
+          * "span.count": "#{@stack.length}"
+          * ".menu":
+              * ".list": @stack.map @unit
+              * "button.clear": "Clear"
+      else {}
     insert: (item) ->
       @stack.push item
       @render!
@@ -224,7 +257,7 @@ $ ->
           when "clear"
             notify.stack = []
             notify.render!
-            socket.emit "click"
+            socket.emit "clear"
           when "link"
             stamp = $ click.target .attr "stamp"
             page-element.stamp = stamp

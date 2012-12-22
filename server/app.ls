@@ -17,6 +17,7 @@ io.sockets.on "connection", (socket) ->
   socket.emit "greet"
   log "a connection"
   profile = {}
+  my-topic = ""
 
   socket.on "index", -> socket.emit "index", []
 
@@ -49,7 +50,7 @@ io.sockets.on "connection", (socket) ->
       io.sockets.emit "create-topic", item
 
   socket.on "topics", ->
-    topics .sort time:-1 .all (err, docs) ->
+    topics .limit 10 .sort time:-1 .all (err, docs) ->
       socket.emit "topics", docs
     if profile.username?
       msgs.all {receiver: that}, {"_id": 0}, (err, docs) ->
@@ -57,10 +58,12 @@ io.sockets.on "connection", (socket) ->
         socket.emit "msgs", docs
 
   socket.on "load-topic", (stamp) ->
-    posts.all topic: stamp, (err, docs) ->
+    my-topic := stamp
+    q = {topic: stamp}
+    posts.sort {stamp: -1} .limit 10 .all q, (err, docs) ->
       throw err if err?
       log "from db:", docs
-      socket.emit "load-topic", docs
+      socket.emit "load-topic", docs.reverse!
 
   socket.on "add-reply", (data) ->
     time = new-date!
@@ -87,6 +90,21 @@ io.sockets.on "connection", (socket) ->
           msg = {name, time, text, receiver, stamp}
           msgs.save msg, ->
 
-  socket.on "click", ->
+  socket.on "clear", ->
     if profile.username?
       msgs.remove receiver: that, ->
+
+  socket.on "more-topic", (stamp) ->
+    q = {stamp: {$lt: stamp}}
+    log "q", q
+    topics.limit 10 .all q, (err, docs) ->
+      socket.emit "more-topic", docs.reverse!
+
+  socket.on "more-post", (stamp) ->
+    log "lt:", stamp
+    q1 = {topic: my-topic}
+    q2 = {stamp: {$lt: stamp}}
+    log stamp, q2, my-topic
+    posts.find q1 .sort {stamp: 1} .limit 10 .all q2, (err, docs) ->
+      socket.emit "more-post", docs
+      log "docs:", docs

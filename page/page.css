@@ -113,6 +113,10 @@ textarea {
   color: #fff;
   font-family: monospace;
 }
+#paper .more {
+  text-align: center;
+  padding: 10px;
+}
 #paper .post .list {
   min-height: 200px;
 }
